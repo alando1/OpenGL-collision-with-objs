@@ -6,16 +6,18 @@
 #include <stdio.h>
 #include <string>
 #include <chrono>
+/*---------------*/
 #include "DrawFunc.h"
 #include "suppliedGlutFuncs.h"
 #include "Terrain.h"
 #include "Vec3.h"
 #include "Portal.h"
+#include "Bullet.h"
 #include "Obj.h"
 /*---------------*/
 #include <SOIL.h>
 #include <SDL.h>
-#undef main
+#undef main 	//required by SDL
 #include <SDL_mixer.h>
 
 #ifdef __APPLE__
@@ -26,21 +28,21 @@
 
 using namespace std;
 
-#define GRAVITY -981.0f//-98.10f
+#define GRAVITY -981.0f
 #define imageSize 256
 
-/*-----Points-in-Time-----*/
+/*-----Points-in-Time-----------------------------------------------------------*/
 chrono::steady_clock::time_point currentTime, lastTime, jumpStart, portalPassTime;
-chrono::steady_clock::time_point lastWarp;
+chrono::steady_clock::time_point lastWarp, shootStart, shootEnd;
 
-/*-------Objects----------*/
+/*-------Objects----------------------------------------------------------------*/
 Obj* stormtrooper = NULL;
 Obj* building = NULL;
 Obj* pistol = NULL;
 Obj* pist2 = NULL;
 Obj* tree = NULL;
 
-/*------Bool-Inputs-------*/
+/*------Bool-Inputs-------------------------------------------------------------*/
 bool readyToWarp = TRUE;
 bool keyStates[256], keyTaps[256];
 bool isCrouched = FALSE;
@@ -52,22 +54,24 @@ bool hasPistol = FALSE;
 bool zoom = FALSE;
 bool wireFrame = FALSE;
 bool inBounds = TRUE;
+bool holdingPortalGun = FALSE;
+bool holdingPistol = FALSE;
+bool shoot = FALSE;
 
-/*------View-Angles-------*/
+/*------View-Angles-------------------------------------------------------------*/
 float heading = 0.0f;
 float pitch = 0.0f;
 float perspective = 45.0f;
 float aspectRatio = 1024.0f/768.0f;	
 
-/*------Frame-Data--------*/
+/*------Frame-Data--------------------------------------------------------------*/
 float FPS = 0.0f;
 float fpsUpdateTime = 0.0f;
 int frameCount = 0;
 
-/*--Camera Position and Look Vectors--*/
+/*--Camera Position and Look Vectors--------------------------------------------*/
 Vec3 camLook(0.0f,0.0f,-1.0f);
-//Vec3 camPos(105050.0f, 12000.0f,9000.0f);
-Vec3 camPos(50058.21f, 12144.12f, 95300.75f);//camPos(5005.821f, 1214.412f, 9530.075f);//camPos(1725.0f,5.0f,4308.0f);
+Vec3 camPos(50058.21f, 12144.12f, 95300.75f);//camPos(1725.0f,5.0f,4308.0f);
 Vec3 portalGunPos(camPos.x, camPos.y, camPos.z-1000);
 Vec3 pistolPos(camPos.x+1000, 14825, camPos.z-1000);
 Vec3 respawnPos(50058.21f, 121441.20f, 95300.75f);
@@ -75,8 +79,7 @@ Vec3 lightPos(50058.21f, 16830.0f, 90000.0f);
 
 GLfloat light_position[] = { lightPos.x, lightPos.y, lightPos.z, 1.0f };
 
-
-/*------Velocities--------*/
+/*------Velocities--------------------------------------------------------------*/
 float dt;
 float speed, flySpeed=0.15;
 float updateSpeedTime = 0.0f;
@@ -87,25 +90,26 @@ float jumpVelocity = 1500.0f;//200.0f;
 float initialJumpHeight = 0.0f;
 Vec3 prevPos=camPos;
 
-/*------Texture-Data------*/
+
+/*------Texture Data------------------------------------------------------------*/
 GLUquadricObj* quadric;
 int centerX, centerY, texture;
 void* font = GLUT_BITMAP_HELVETICA_18;
 bool loadHiRes;
 
-/*------Portals-----------*/
+/*------Portals-----------------------------------------------------------------*/
 list<Portal*> portalList;
 int PortalsCenter, PortalsOuter, Portals;
 float iconSpin = 0;
 
-/*------Sounds------------*/
+/*------Sounds------------------------------------------------------------------*/
 Mix_Music *gMusic = NULL;
 Mix_Chunk *shootSFX = NULL;
 Mix_Chunk *gSkyDive = NULL;
 Mix_Chunk *gWrecked = NULL;
 Mix_Chunk *gShowMe = NULL;
 
-/*------Terrain-Data------*/
+/*------Terrain-Data------------------------------------------------------------*/
 float* currentMap;
 float* mapHeights;
 float* mapHeights1;
@@ -114,8 +118,12 @@ Terrain terrain(imageSize,imageSize);
 Terrain terrain1(imageSize,imageSize);
 Terrain terrain2(imageSize,imageSize);
 Terrain terrain3(imageSize,imageSize);
-
 int xt = 0; int zt = 0; int index = 0;
+
+/*------bullet------------------------------------------------------------------*/
+Bullet* ball;
+list<Bullet*> bulletList;
+
 
 void handleFunc(float dt)
 {
@@ -124,7 +132,7 @@ void handleFunc(float dt)
 	if(keyTaps['1'])
 		inFirstWorld = !inFirstWorld;
 
-	/*--Zoom--*/
+	/*-----Zoom---------------------------------------------------------------------*/
 	if(zoom)
 	{
 		if(perspective <= 2.0f)
@@ -143,7 +151,7 @@ void handleFunc(float dt)
 		glMatrixMode(GL_MODELVIEW);
 	}
 
-	/*--------change perspective---------*/
+	/*--------change perspective----------------------------------------------------*/
 	if(keyStates['-'])
 	{
 		perspective -= 1.0f;
@@ -173,14 +181,14 @@ void handleFunc(float dt)
 		glMatrixMode(GL_MODELVIEW);
 	}
 
-	/*---------Fly-Foward---------*/
+	/*---------Fly-Foward-----------------------------------------------------------*/
 	if(keyStates['q'] || keyStates['Q'])
 		camPos+=camLook*(flySpeed*13.5f*dt);
 
 	if (keyTaps['q'] || keyTaps['Q'])
 		Mix_PlayChannel( 3, gSkyDive, -1 );
 
-	/*--------Move-Foward---------*/
+	/*--------Walk-Foward-----------------------------------------------------------*/
 	if(keyStates['w'] || keyStates['W'])
 	{
 
@@ -189,7 +197,7 @@ void handleFunc(float dt)
 		camPos.z+=camLook.z*(crouchFactor*camSpeed*20.0f*dt);
 	}
 
-	/*---------sprint-------------*/
+	/*---------sprint---------------------------------------------------------------*/
 	if(keyStates['r'] || keyStates['R'])
 	{
 		camPos.x+=camLook.x*(crouchFactor*camSpeed*20.0f*dt);
@@ -197,7 +205,7 @@ void handleFunc(float dt)
 		camPos.z+=camLook.z*(crouchFactor*camSpeed*20.0f*dt);
 	}
 
-	/*--------Move-Backwards------*/
+	/*--------Move-Backwards--------------------------------------------------------*/
 	if(keyStates['s'] || keyStates['S'])
 	{
 		camPos.x-=camLook.x*(crouchFactor*camSpeed*20.0f*dt);
@@ -205,7 +213,7 @@ void handleFunc(float dt)
 		camPos.z-=camLook.z*(crouchFactor*camSpeed*20.0f*dt);
 	}
 
-	/*--------Move-Left----------*/
+	/*--------Move-Left-------------------------------------------------------------*/
 	if(keyStates['a'] || keyStates['A'])
 	{
 		vecx = camLook.z;
@@ -215,7 +223,7 @@ void handleFunc(float dt)
 		camPos.z+= vecz*(crouchFactor*camSpeed*20.0f*dt);
 	}
 
-	/*--------Move-Right----------*/
+	/*--------Move-Right------------------------------------------------------------*/
 	if(keyStates['d'] || keyStates['D'])
 	{
 		vecx = camLook.z;
@@ -225,7 +233,7 @@ void handleFunc(float dt)
 		camPos.z-= vecz*(crouchFactor*camSpeed*20.0f*dt);		
 	}
 
-	/*---------crouch-------------*/
+	/*---------crouch---------------------------------------------------------------*/
 	if(keyTaps['c'] || keyTaps['C'])
 	{
 		if(!isCrouched)
@@ -239,16 +247,16 @@ void handleFunc(float dt)
 			crouchFactor = 1.0f;
 		}
 		isCrouched = !isCrouched;
-
-		
 	}
+
+	/*----------up/down-------------------------------------------------------------*/
 	if(keyStates['x'] || keyStates['X'])
 		camPos.y += (crouchFactor*camSpeed*13.0f*dt);
 
 	if(keyStates['Z'] || keyStates['z'])
 		camPos.y -= (crouchFactor*camSpeed*13.0f*dt);
 
-	/*----------jump--------------*/
+	/*----------jump----------------------------------------------------------------*/
 	if(keyStates[' '])
 	{
 		inJump = TRUE;
@@ -283,7 +291,7 @@ void handleFunc(float dt)
 		}
 	}
 
-	/*-----Toggle wireframe-----*/
+	/*-----Toggle wireframe---------------------------------------------------------*/
 	if(keyTaps['t'] || keyTaps['T'])
 	{
 		wireFrame = !wireFrame;
@@ -293,12 +301,16 @@ void handleFunc(float dt)
 		else
 			glPolygonMode(GL_FRONT,GL_FILL);
 	}
+
+	/*-----teleport to 000---------------------------------------------------------*/
 	if(keyTaps['\t'])
 	{
 		Vec3 tmp(0,0,0);
 		camPos = tmp;
 	}
 
+
+	/*-----Light Movement code------------------------------------------------------*/
 	if(keyStates['j'] || keyStates['J'])
 	{
 		lightPos.x-=(5.0f*dt);
@@ -323,6 +335,7 @@ void handleFunc(float dt)
 	{
 		lightPos.y-=(5.0f*dt);
 	}
+
 }
 
 void updateCamHeight()
@@ -354,17 +367,37 @@ bool floorDistance()
 
 void mapItem()
 {
-
 	//initial position of mapItem
 	int tmpzt = static_cast<int>(camPos.z - 1000)/(64*scale);
 	int tmpxt = static_cast<int>(camPos.x)/(64*scale); 
 	index = tmpzt * imageSize + tmpxt;
 	portalGunPos.y = scale * currentMap[index] * 1500.0f;
-
-
-
 }
 
+
+/*---Update Lists---------------------------------------------------------------*/
+void updateBullets()
+{
+	list<Bullet*>::iterator it;
+	auto now = chrono::steady_clock::now();
+
+	bool refresh = true;
+	
+	while(refresh)
+	{
+		refresh = false;
+		for(it = bulletList.begin(); it!=bulletList.end(); ++it)
+		{
+			auto end = (*it)->End();
+			if(end < now)
+			{
+				bulletList.erase(it);
+				refresh = true;
+				break;
+			}
+		}
+	}
+}
 void updatePortals()
 {
 	list<Portal*>::iterator it;
@@ -431,6 +464,7 @@ void updatePortals()
 
 }
 
+/*---Render lists---------------------------------------------------------------*/
 void renderPortals()
 {
 	list<Portal*>::iterator it;
@@ -440,38 +474,52 @@ void renderPortals()
 	}
 }
 
+void renderBullets()
+{
+	list<Bullet*>::iterator it;
+	for(it = bulletList.begin(); it!=bulletList.end(); ++it)
+	{
+		(*it)->draw();
+		//cout << "rendering bullets" << endl;
+	}
+}
 
 
+/*----Render Scene--------------------------------------------------------------*/
 void renderScene(void)
 {
+	iconSpin += (360.0f * dt / 1000.0f);						//spins 2pi per sec
+
+
+	/*---update time every frame----------------------------------------------------*/
 	currentTime = chrono::steady_clock::now();
 	dt = chrono::duration_cast<chrono::duration<float, milli>>(currentTime-lastTime).count();
     lastTime = currentTime;
-
     fpsUpdateTime += dt;
-	
+	speed = camPos.distance(prevPos) * dt / 1000.0f;
 
-	// Clear Color and Depth Buffers
+	/*---Clear color and Depth Buffers----------------------------------------------*/
 	glClearColor(0.5f,0.5f,0.5f,1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	if(camPos.x >= 0 && camPos.z >= 0)
 	{
+
 		if(floorDistance()) 
 			updateCamHeight();
 	}
 
 	updatePortals();
+	updateBullets();
 	handleFunc(dt);
 
-	speed = camPos.distance(prevPos) * dt / 1000.0f;
 
 	// Reset transformations
 	glLoadIdentity();
 
-		/*--------background---------*/
+		/*--------background--------------------------------------------------------*/
 		gluLookAt(0,0,0,camLook.x,camLook.y,camLook.z,0,1,0);
-			//glCullFace(GL_FRONT);
+			glDisable(GL_LIGHT0);
 			glDisable(GL_CULL_FACE);
 			glDepthMask(GL_FALSE);
 
@@ -483,30 +531,35 @@ void renderScene(void)
 				glRotatef(90, 1,0,0);
 				texturePlane(texture, 496.0f, 692.0f);
 
-			glEnable(GL_CULL_FACE);
 			glDisable(GL_TEXTURE_2D);
+			glEnable(GL_LIGHT0);
+			glEnable(GL_CULL_FACE);
 			glCullFace(GL_BACK);
 			glDepthMask(GL_TRUE);
+		/*--------end of background-------------------------------------------------*/
 
 	glLoadIdentity();
 	gluLookAt(camPos.x,camPos.y+addCrouch,camPos.z,camPos.x+camLook.x,camPos.y+addCrouch+camLook.y,camPos.z+camLook.z,0,1,0);
 
-	//const GLfloat light_position[] = { 0.0f, 5.0f, 0.0f, 1.0f };
-
+	/*----Ball of Light-------------------------------------------------------------*/
 	GLfloat light_position[] = { lightPos.x, lightPos.y, lightPos.z, 1.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 	glPushMatrix(); 
-		//glTranslatef(50058.21f, 16825.0f, 90000.0f);
-		glTranslatef(lightPos.x,lightPos.y+200,lightPos.z);
+		glTranslatef(lightPos.x,lightPos.y+1000,lightPos.z);
 		glColor4f(1,1,1,1);
 		glutSolidSphere(200, 15, 15);
 	glPopMatrix();
+	/*----end of Ball of Light------------------------------------------------------*/
 
+
+	/*----Draw objects in 3d scene--------------------------------------------------*/
 	if(inFirstWorld)
 	{
 		glEnable(GL_FOG);
-		terrain.draw(wireFrame);
+		terrain.drawElements();
+
 		glPushMatrix();
+
 			glTranslatef(portalGunPos.x, 14825, portalGunPos.z-5000);
 			
 			//check if in range of floating pistol
@@ -514,7 +567,6 @@ void renderScene(void)
 			{
 				hasPistol = TRUE;
 			}
-
 			if(hasPistol == FALSE)
 			{
 				glPushMatrix();
@@ -532,81 +584,79 @@ void renderScene(void)
 
 			glPushMatrix();
 			glTranslatef(-200,0,0);
-			//glTranslatef(50058.21f, 12144.12f, 95300.75f);
 			glScalef(200,200,200);
 			tree->draw();
 			glPopMatrix();
-
-			glPushMatrix();
-			glTranslatef(200.0f, 0, 0);
-			glScalef(85.0f,85.0f,85.0f);
-			pist2->draw();
-			glTranslatef(2.0f,0.0f,0);
-			pist2->draw();
-			glPopMatrix();
-
 
 			glTranslatef(0,-10000.0f, 0);
 			glScalef(40.0f, 40.0f, 40.0f);
 			building->draw();
 	
 		glPopMatrix();
-
-		//glDisable(GL_FOG);
 	}
 	else
 	{
 		glEnable(GL_FOG);
-		terrain1.draw(wireFrame);
+		terrain1.drawElements();
+
 	}
-
 	glDisable(GL_CULL_FACE);
+	/*----End of Draw objects in 3d scene-------------------------------------------*/
 
 
+	/*----Update lists--------------------------------------------------------------*/
 	renderPortals();
-
+	renderBullets();
+	/*----End of Update lists-------------------------------------------------------*/
 
 
 	//check if in range of floating icon
 	if(camPos.distance(portalGunPos) < 200.0f && (hasPortalGun == FALSE))
 	{
 		hasPortalGun = true;
+		holdingPortalGun = true;
 		Mix_PlayChannel( -1, gWrecked, 0 );
 	}
 	
 	if(hasPortalGun == FALSE)
 	{	
-																	//Portal gun icon pickup
-														//maps height index of item
-		glTranslatef(portalGunPos.x, portalGunPos.y, portalGunPos.z);		//translate to item pos
-		glScalef(700,700,700);											//scales larger
-		iconSpin += (360.0f * dt / 1000.0f);						//spins 2pi per sec
+	//Portal gun icon pickup
+	//maps height index of item
+		glTranslatef(portalGunPos.x, portalGunPos.y, portalGunPos.z);
+		glScalef(700,700,700);
 		glRotatef(iconSpin,0,1,0);
 		drawPortalGun(dt);
 	}
 	else
-	{										//hasPortalGun
-		glLoadIdentity();					//translate and rotate infront of camera
-		glTranslatef(0.15f,-0.07f,-0.3f);	//to get an FPS look
-		glRotatef(180, 0,1,0);
-		drawPortalGun(dt);
-		glCullFace(GL_BACK);		
+	{			
+
+		if(holdingPortalGun == TRUE)
+		{
+			glLoadIdentity();					//translate and rotate infront of camera
+			glTranslatef(0.15f,-0.07f,-0.3f);	//to get an FPS look
+			glRotatef(180,0,1,0);
+			drawPortalGun(dt);
+			glCullFace(GL_BACK);		
+		}
 	}
 
-	if(hasPistol)
+	if(hasPistol == TRUE)
 	{
-		glLoadIdentity();
-		glTranslatef(1.25f, 0.0f, -5.0f);
-		glRotatef(90,0,1,0);
-		glScalef(1.0f,1.0f,1.0f);
-		pistol->draw();
-		glPopMatrix();
+		if(holdingPistol == TRUE)
+		{
+			glLoadIdentity();
+			glTranslatef(1.25f, -0.1f, -5.0f);
+			glRotatef(90,0,1,0);
+			glScalef(1.0f,1.0f,1.0f);
+			pistol->draw();
+			glPopMatrix();
+		}
 	}
 
 
 	memset(keyTaps,0,256*sizeof(bool));
 
-	/*----Update Frames-------*/
+	/*----Update Frames-------------------------------------------------------------*/
 	if (fpsUpdateTime > 100.0f)
 	{
 		FPS = static_cast<float>(frameCount) / fpsUpdateTime * 1000.0f;
@@ -614,7 +664,7 @@ void renderScene(void)
 		fpsUpdateTime = 0.0f;
 	}
 
-	/*----Update prevPos------*/
+	/*----Update prevPos------------------------------------------------------------*/
 	prevPos = camPos;		
 
     printScreenText();
@@ -624,25 +674,28 @@ void renderScene(void)
 
 void initAudio()
 {
+
+	/*---Initialize SDL_audio-------------------------------------------------------*/
 	bool success;
-	//Initialize SDL_audio
 	if( SDL_Init( SDL_INIT_AUDIO ) < 0 )
     {
         printf( "SDL could not initialize! SDL Error: %s\n", SDL_GetError() );
         success = false;
     }
-    //Initialize SDL_mixer
+
+	/*---Initialize SDL_mixer-------------------------------------------------------*/
     if( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 2048 ) < 0 )
     {
         printf( "SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
     }
     
-    gMusic = Mix_LoadMUS("./SFX/SpaceMusic.mp3");
+	/*---Game Music-----------------------------------------------------------------*/
+      gMusic = Mix_LoadMUS("./SFX/SpaceMusic.mp3");
     //gMusic = Mix_LoadMUS( "./SFX/MaculateEsseks.mp3" );
     Mix_PlayMusic( gMusic, -1 );
 
-    /*--------Sound FX---------*/
+    /*--------Sound FX--------------------------------------------------------------*/
     gSkyDive = Mix_LoadWAV("./SFX/Skydive.wav");
     shootSFX = Mix_LoadWAV("./SFX/portalBlast.wav");
     gWrecked = Mix_LoadWAV("./SFX/riggity.wav");
@@ -653,49 +706,63 @@ void initAudio()
     {
         printf( "Failed to load scratch sound effect! SDL_mixer Error: %s\n", Mix_GetError() );
         success = false;
-    }*/
+    }
+*/
 }
+
 int main(int argc, char **argv)
 {
 
-	// initialize GLUT and create window
+	// initialize GLUT, create window, initialize SDL
 	initGL(argc, argv);
 	initAudio();
 
-	quadric = gluNewQuadric();
-	gluQuadricTexture(quadric, GL_TRUE);
-
+	/*----Load Terrains-------------------------------------------------------------*/
 	terrain.loadFile("./heightMaps/wall.raw", imageSize);
 	terrain1.loadFile("./heightMaps/gta.raw", imageSize);
+	/*----End of Load Terrains------------------------------------------------------*/
 
+
+	/*----Map array of indexed heights----------------------------------------------*/
 	mapHeights = new float[imageSize*imageSize];
 	mapHeights = terrain.returnHeights();
 	currentMap = mapHeights;
 	scale = terrain.scale();
 
-	/*---set initial camheight y-------*/
+	mapHeights1 = new float[imageSize*imageSize];
+	mapHeights1 = terrain1.returnHeights();
+	mapItem();
+	/*----End of Map array of indexed heights---------------------------------------*/
+
+
+	/*---set initial camheight y----------------------------------------------------*/
 	int tmpx = static_cast<int>(camPos.z)/(64*scale);
 	int tmpz = static_cast<int>(camPos.x)/(64*scale); 
 	index = tmpz * imageSize + tmpx;
 	camPos.y = scale * currentMap[index] * 1500.0f;
+	/*---End of set initial camheight y---------------------------------------------*/
 
+
+	/*----Load Object files---------------------------------------------------------*/
 	stormtrooper = new Obj("./data/stormtrooper/Stormtrooper.obj");
 	building = new Obj("./data/City/City.obj");
-	pist2 = new Obj("./data/newgun.obj");
+	pist2 = new Obj("./data/newgun2.obj");
 	pistol = new Obj("./data/newgun.obj");
 	tree = new Obj("./data/Tree/Tree.obj");
+	/*----End of Load Object files--------------------------------------------------*/
 
-	mapItem();
-
-	mapHeights1 = new float[imageSize*imageSize];
-	mapHeights1 = terrain1.returnHeights();
-
+	/*----Load Texture images-------------------------------------------------------*/
 	texture = SOIL_load_OGL_texture("./textures/showMeWhatYouGot.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 	Portals = SOIL_load_OGL_texture("./textures/portal.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 	PortalsCenter = SOIL_load_OGL_texture("./textures/portalcenter.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 	PortalsOuter = SOIL_load_OGL_texture("./textures/spiral2.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 
+	quadric = gluNewQuadric();
+	gluQuadricTexture(quadric, GL_TRUE);
+	/*----End of Load Texture images------------------------------------------------*/
+
 	lastTime = chrono::steady_clock::now();
+
 	glutMainLoop();
 	glutSetCursor(GLUT_CURSOR_INHERIT);
 
