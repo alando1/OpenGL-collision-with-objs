@@ -6,6 +6,7 @@
 #include "Vec3.h"
 #include "Portal.h"
 #include "drawFunc.h"
+#include "Bullet.h"
 
 #include <list>
 #include <stdio.h>
