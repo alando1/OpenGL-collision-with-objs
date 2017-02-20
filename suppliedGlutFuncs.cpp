@@ -155,7 +155,7 @@ void mouseButton(int button, int state, int x, int y)
 		{
 			Bullet* ball = new Bullet(10.0f, 20.0f, camLook, camPos, chrono::steady_clock::now());
 			bulletList.push_back(ball);
-			cout << "bullet fired" << endl;
+			//cout << "bullet fired" << endl;
 		}
 	}
 
