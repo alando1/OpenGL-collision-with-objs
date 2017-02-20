@@ -272,19 +272,19 @@ void printScreenText()
 	char msg5[80];
     glColor3f(0, 0.6f, 0);
  
-    sprintf_s(msg, 79, "cam pos: %.3f, %.3f, %.3f", camPos.x, camPos.y, camPos.z);
+    sprintf(msg, "cam pos: %.3f, %.3f, %.3f", camPos.x, camPos.y, camPos.z);
     renderText2D(5.0f, 20.0f, font, msg);
 
-    sprintf_s(msg2, 79, "FOV: %.1f", perspective);
+    sprintf(msg2, "FOV: %.1f", perspective);
     renderText2D(5.0f, 40.0f, font, msg2);
 
-    sprintf_s(msg3, 79, "look vector: %.3f, %.3f, %.3f", camLook.x, camLook.y, camLook.z);
+    sprintf(msg3, "look vector: %.3f, %.3f, %.3f", camLook.x, camLook.y, camLook.z);
     renderText2D(5.0f, 60.0f, font, msg3);
 
-    sprintf_s(msg4, 79, "Speed: %.3f", speed);
+    sprintf(msg4, "Speed: %.3f", speed);
     renderText2D(5.0f, 80.0f, font, msg4);
 
-    sprintf_s(msg5, 79, "FPS: %.3f", FPS);
+    sprintf(msg5, "FPS: %.3f", FPS);
     renderText2D(5.0f, 100.0f, font, msg5);    
 
 }
