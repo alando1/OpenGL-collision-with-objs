@@ -1,6 +1,7 @@
 #include "suppliedGlutFuncs.h"
 
 extern list<Portal*> portalList;
+extern list<Bullet*> bulletList;
 extern Mix_Chunk *shootSFX;
 extern float pitch, heading, boost, aspectRatio, perspective;
 extern int centerX, centerY;
@@ -8,7 +9,8 @@ extern bool keyStates[256], keyTaps[256], inJump;
 extern void* font;
 extern float FPS, speed;
 extern Vec3 camPos, camLook;
-extern bool hasPortalGun, zoom;
+extern bool hasPortalGun, zoom, holdingPortalGun, holdingPistol, shoot;
+//extern chrono::steady_clock::time_point shootStart;
 
 float x= camPos.x;
 float y= camPos.y; 
@@ -143,12 +145,17 @@ void mouseButton(int button, int state, int x, int y)
 {
 	if((button == GLUT_LEFT_BUTTON) && (state == GLUT_DOWN))
 	{
-		if(hasPortalGun)
+		if(hasPortalGun && !holdingPistol)
 		{
-		Mix_PlayChannel( -1, shootSFX, 0 );
-		Portal* warp = new Portal(camPos, camLook, chrono::steady_clock::now());
-		portalList.push_back(warp);
-		weaponRecoil();			
+			Mix_PlayChannel( -1, shootSFX, 0 );
+			Portal* warp = new Portal(camPos, camLook, chrono::steady_clock::now());
+			portalList.push_back(warp);		
+		}
+		else if(holdingPistol)
+		{
+			Bullet* ball = new Bullet(10.0f, 20.0f, camLook, camPos, chrono::steady_clock::now());
+			bulletList.push_back(ball);
+			cout << "bullet fired" << endl;
 		}
 	}
 
@@ -175,9 +182,17 @@ void mouseButton(int button, int state, int x, int y)
 		else
 		{
 			if (button == 3)
-				cout << "scroll UP." << endl;
+			{
+				//cout << "scroll UP." << endl;
+				holdingPortalGun = !holdingPortalGun;
+				holdingPistol = !holdingPistol;
+			}
 			else if(button == 4)
-				cout << "scroll DOWN." << endl;
+			{
+				//cout << "scroll DOWN." << endl;
+				holdingPortalGun = !holdingPortalGun;
+				holdingPistol = !holdingPistol;
+			}
 		}
 	}
 
