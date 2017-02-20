@@ -3,10 +3,11 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-
+#include "Vec3.h"
 
 #ifdef __APPLE__
 #include <GLUT/glut.h>
@@ -14,7 +15,10 @@
 #include <GL/glut.h>
 #endif
 
-#include "Vec3.h"
+struct color4
+{
+	float r, g, b, a;
+};
 
 class Terrain
 {
@@ -27,7 +31,22 @@ class Terrain
 		float* heights;
 		int tileSize;
 		float heightRatio;
-		float* vertices;
+
+
+		GLfloat* vertices;
+		GLfloat* textures;
+		GLfloat* normals;
+		GLfloat* colors;
+		GLint* indices;
+
+		int numOfVerts;
+		int colorIncrement;
+		vector<Vec3> tmpVecArray;
+		vector<Vec2> tmpUVsArray;
+		vector<Vec3> tmpNrmArray;
+		vector<color4> tmpColArray;
+		vector<int> tmpIndxArray;
+
 
 		void buildHeightMap(unsigned char* buffer);
 
@@ -35,12 +54,14 @@ class Terrain
 		Terrain(float len, float wid);
 		~Terrain();
 		void loadFile(const char* fileName, int nSize);
-		void draw(bool wireFrame);
-		void setVertexColor(int x, int z);
-		float* returnHeights();
+		void draw();
+		void draw2();
 		float scale();
-		void draw2(bool wireFrame);
+		void drawElements();
+		float* returnHeights();
+		void normalizeTerrain();
+		color4 setColorArray(float y);
+		void setVertexColor(int x, int z);
 		void setVertexColor2(int x, int z);
 		Vec3 returnNormal(Vec3& x,Vec3& y,Vec3& z);
-		void normalizeTerrain();
 };
