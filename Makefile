@@ -1,6 +1,6 @@
 CC=g++
 CFLAGS=-Wall -std=c++11 
-INC=-Iimage/ -Iutilities/ -Ihsi/ -Iopencv/ -ISOIL/ -ISDL/
+INC=-ISOIL/ -ISDL/
 LIB=-lGLU -lGL -lSOIL -lglut -lSDL2 -lSDL_mixer
 BIN=
 SRC=Terrain.cpp drawFunc.cpp Mesh.cpp Item.cpp Weapon.cpp Bullet.cpp Portal.cpp suppliedGlutFuncs.cpp 256main.cpp
