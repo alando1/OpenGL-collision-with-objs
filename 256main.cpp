@@ -493,7 +493,7 @@ void updateEnemies()
 {
 	for(auto it = enemyList.begin(); it!=enemyList.end(); ++it)
 	{
-		if((*it)->target->isAlive())
+		if((*it)->target->isAlive() && (*it)->isAlive())
 			(*it)->persue(dt);
 	}
 }
@@ -520,30 +520,38 @@ void updateBullets()
 	/*iterate throught each bullet and check collision with position of each enemy*/
 	list<Player*>::iterator it2;
 	Vec3 r;
-	for(it = bulletList.begin(); it!=bulletList.end(); ++it)
+	bool fresh = true;
+	while(fresh)
 	{
-		Vec3 tmp = (*it)->returnPos();
-		for(it2 = enemyList.begin(); it2!=enemyList.end(); ++it2)
+		fresh = false;
+		for(it = bulletList.begin(); it!=bulletList.end(); ++it)
 		{
-			r = (*it2)->returnCollisionVec()-tmp;
-			if(r.length() < 5.0f)
+			Vec3 tmp = (*it)->returnPos();
+			for(it2 = enemyList.begin(); it2!=enemyList.end(); ++it2)
 			{
-				(*it2)->setDead();
-				enemyList.erase(it2);
-				numOfZombies = enemyList.size();
+				r = (*it2)->returnCollisionVec()-tmp;
+				if(r.length() < 5.0f)
+				{
+					(*it2)->setDead();
+					//enemyList.erase(it2);
+					numOfZombies--;
+					delete *it;
+					fresh = true;
+					bulletList.erase(it);
+				}
 			}
-		}
 
-		//iterate each bullet and check collision with another list, different collision response...
-		list<Obj*>::iterator it3;
-		for(it3 = objList.begin(); it3!=objList.end(); ++it3)
-		{
-			r = (*it3)->returnPos()-tmp;
-
-			if(r.length() < 12.0f)
+			//iterate each bullet and check collision with another list, different collision response...
+			list<Obj*>::iterator it3;
+			for(it3 = objList.begin(); it3!=objList.end(); ++it3)
 			{
-				(*it3)->collision = true;
-				(*it3)->collisionVec3 = (*it)->returnLook();
+				r = (*it3)->returnPos()-tmp;
+
+				if(r.length() < 12.0f)
+				{
+					(*it3)->collision = true;
+					(*it3)->collisionVec3 = (*it)->returnLook();
+				}
 			}
 		}
 	}

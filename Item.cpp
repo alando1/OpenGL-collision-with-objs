@@ -26,10 +26,10 @@ bool Item::isInRange(const Vec3& playerPos, float radius)
 			//cout << "pickupSFX is " << pickupSFX << endl;
 			Mix_PlayChannel( -1, pickupSFX, 0 );
 		}
-		return TRUE;
+		return true;
 	}
 	else 
-		return FALSE;
+		return false;
 }
 
 Item& Item::operator=(const Obj& other)

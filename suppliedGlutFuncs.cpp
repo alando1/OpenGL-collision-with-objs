@@ -331,7 +331,7 @@ void printScreenText()
     sprintf(msg, "Movement:");
     renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 100.0f, font, msg);
 
-    sprintf(msg, "Space - JUMP");
+    sprintf(msg, "SPACE - JUMP");
     renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 80.0f, font, msg);  
 
     sprintf(msg, "W - FORWARD");

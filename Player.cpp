@@ -27,8 +27,8 @@ void Player::persue(float dt)
 	lookAt(target->pos);
 	float dist = pos.distance(target->pos);
 
-	/*----Persue only if within range 7 to 2000
-		  if less than 7, attack-------*/
+	/*----Persue if distance > 20
+		  if less than 20, attack-------*/
 	if(dist > 20.0f)
 		pos += (look*dt*0.1f*speed);
 	else
