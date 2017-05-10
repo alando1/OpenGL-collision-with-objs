@@ -27,6 +27,7 @@ private:
 	float size, velocity;
 	Vec3 look, pos;
 	color4 color;
+	float damageRadius;
 	chrono::steady_clock::time_point start, end;
 
 public:
@@ -37,4 +38,6 @@ public:
 	Vec3 returnLook() { return look; };
 	chrono::steady_clock::time_point Start() { return start; };
 	chrono::steady_clock::time_point End() { return end; };
+	void setDamageRadius(float dr) {	damageRadius = dr; };
+	float getDamageRadius(){	return damageRadius; };
 };

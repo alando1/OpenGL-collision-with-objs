@@ -44,19 +44,16 @@ Obj* stormtrooper = NULL;
 Obj* building = NULL;
 Obj* pistol = NULL;
 Obj* pist2 = NULL;
-Obj* tree = NULL;
 Obj* elephant = NULL;
 Obj* portalGun = NULL;
-Obj* meshTree = NULL;
 Obj* nimbus = NULL;
 
 /*------Items-------------------------------------------------------------------*/
-Item* iPistol = NULL;
-Item* iPortal = NULL;
-
 Weapon* wPistol = NULL;
 Weapon* wPortal = NULL;
 Weapon* assault = NULL;
+Weapon* rocket = NULL;
+Item* rock = NULL;
 
 /*------Bool-Inputs-------------------------------------------------------------*/
 bool readyToWarp = true;
@@ -84,8 +81,9 @@ int frameCount = 0;
 Vec3 camLook(0.0f, 0.0f, 1.0f);
 Vec3 camPos(3800, 20, 100);
 Vec3 portalGunPos(camPos.x, camPos.y, camPos.z+100);
-Vec3 pistolPos(camPos.x+40, camPos.y, portalGunPos.z);
-Vec3 assaultPos(camPos.x+20, camPos.y, pistolPos.z);
+Vec3 pistolPos(camPos.x+40, camPos.y, camPos.z+100);
+Vec3 assaultPos(camPos.x+20, camPos.y, camPos.z+100);
+Vec3 rocketPos(camPos.x+60, camPos.y, camPos.z+100);
 Vec3 stormPos(portalGunPos.x, camPos.y, portalGunPos.z+50);
 Vec3 respawnPos(3800,20,100);
 Vec3 lightPos(1000.0f, 1000.0f, 1000.0f);
@@ -114,13 +112,15 @@ int PortalsCenter, PortalsOuter, Portals;
 float iconSpin = 1;
 
 /*------Sounds------------------------------------------------------------------*/
-Mix_Music *gMusic = NULL;
-Mix_Chunk *shootSFX = NULL;
-Mix_Chunk *gSkyDive = NULL;
-Mix_Chunk *gWrecked = NULL;
-Mix_Chunk *gShowMe = NULL;
-Mix_Chunk *gBlap = NULL;
-Mix_Chunk *gPistol = NULL;
+Mix_Music* gMusic = NULL;
+Mix_Chunk* shootSFX = NULL;
+Mix_Chunk* gSkyDive = NULL;
+Mix_Chunk* gWrecked = NULL;
+Mix_Chunk* gShowMe = NULL;
+Mix_Chunk* gBlap = NULL;
+Mix_Chunk* gPistol = NULL;
+Mix_Chunk* gAssualt = NULL;
+Mix_Chunk* gRocket = NULL;
 
 /*------Terrain-Data------------------------------------------------------------*/
 Terrain terrain(imageSize,imageSize);
@@ -437,12 +437,13 @@ void updatePortals()
 	auto now = chrono::steady_clock::now();
 
 	bool refresh = true;
-	
 	while(refresh)
 	{
+		//iterate through list of portals
 		refresh = false;
 		for(it = portalList.begin(); it!=portalList.end(); ++it)
 		{
+			//check if portal has expired. if so remove from list.
 			auto end = (*it)->End();
 			if(end < now)
 			{
@@ -462,8 +463,11 @@ void updatePortals()
 			Vec3 tmp = (*it)->returnPosition();
 			Vec3 r = camPos-tmp;
 
+			//wait time of 2 seconds between portal jumps.
 			if(!readyToWarp)
 			{
+				//last warp time + timer of 2 seconds.
+				//if current time greater than endWarp ready to warp is true
 				auto endWarp = lastWarp + chrono::milliseconds(2000);
 				auto tmpnow = chrono::steady_clock::now();
 
@@ -471,10 +475,11 @@ void updatePortals()
 					readyToWarp = true;
 			}
 
+			//check if near portal and portal is open
 			auto nowish = chrono::steady_clock::now();
-			//within bounds
 			if((r.length()<100.0f) && readyToWarp == true && (*it)->Open() < nowish)
 			{
+					//update map
 					inFirstWorld = !inFirstWorld;
 					if(inFirstWorld)
 						currentTerrain = &terrain;
@@ -523,34 +528,24 @@ void updateBullets()
 	bool fresh = true;
 	while(fresh)
 	{
+		//set fresh to false to end while. iterate through each bullet.
 		fresh = false;
 		for(it = bulletList.begin(); it!=bulletList.end(); ++it)
 		{
+			//iterate through all enemies. tmp is bullet pos.
 			Vec3 tmp = (*it)->returnPos();
 			for(it2 = enemyList.begin(); it2!=enemyList.end(); ++it2)
 			{
+				//check for collision between bullet and enemy position.
 				r = (*it2)->returnCollisionVec()-tmp;
-				if(r.length() < 5.0f)
+				if(r.length() < (*it)->getDamageRadius())
 				{
-					(*it2)->setDead();
-					//enemyList.erase(it2);
+					//(*it2)->setDead();
+					enemyList.erase(it2);
 					numOfZombies--;
-					delete *it;
 					fresh = true;
-					bulletList.erase(it);
-				}
-			}
-
-			//iterate each bullet and check collision with another list, different collision response...
-			list<Obj*>::iterator it3;
-			for(it3 = objList.begin(); it3!=objList.end(); ++it3)
-			{
-				r = (*it3)->returnPos()-tmp;
-
-				if(r.length() < 12.0f)
-				{
-					(*it3)->collision = true;
-					(*it3)->collisionVec3 = (*it)->returnLook();
+					/*bulletList.erase(it);
+					delete *it;*/
 				}
 			}
 		}
@@ -562,10 +557,12 @@ void updateWeapons()
 	currentWeapon = NULL;
 	bool refresh = true;
 	while(refresh)
-	{
+	{	
+		//set refresh to false to end while. 
 		refresh = false;
 		for(auto i = weaponList.begin(); i != weaponList.end(); i++)
 		{
+			//check if in range of weapon. 
 			currentWeapon = *i;
 			if(currentWeapon->isInRange(camPos, 20))
 			{
@@ -573,6 +570,7 @@ void updateWeapons()
 				tmp = currentWeapon;
 				tmp->reposition();
 
+				//add to inventory
 				myWeapons.push_back(tmp);
 				weaponList.erase(i);
 				myWeapon = myWeapons.size() - 1;
@@ -660,31 +658,7 @@ void firstWorldDraw()
 				building->draw();
 			glPopMatrix();
 
-		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_BLEND);
-		glEnable(GL_ALPHA_TEST);
-		glAlphaFunc(GL_NOTEQUAL, 0);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			glPushMatrix();
-				float tmpTreez = meshTree->pos.z;
-			for(int z = 0; z < 7; z++)
-				{
-					meshTree->draw();
-					meshTree->pos.x += 120.0f;
-					meshTree->draw();
-
-					meshTree->pos.x -= 120.0f;
-					meshTree->pos.z += 500.0f;
-				} 
-				meshTree->pos.z = tmpTreez;
-			glPopMatrix();
-		glDisable(GL_BLEND);
-		glDisable(GL_ALPHA_TEST);
-
-			glPushMatrix();
-				if(stormtrooper->collision == true)
-					stormtrooper->setRot(iconSpin,stormtrooper->collisionVec3.x,0,stormtrooper->collisionVec3.z);
-
 				stormtrooper->draw();
 			glPopMatrix();
 
@@ -760,6 +734,8 @@ void initAudio()
     gBlap = Mix_LoadWAV("./SFX/blap3.wav");
     gShowMe = Mix_LoadWAV("./SFX/showMeWhatYouGot.wav");
     gPistol = Mix_LoadWAV("./SFX/pistol.wav");
+    gAssualt = Mix_LoadWAV("./SFX/ak.wav");
+    gRocket = Mix_LoadWAV("./SFX/rocket.wav");
     Mix_PlayChannel( 3, gShowMe, 0);
 }
 void load()
@@ -767,44 +743,45 @@ void load()
 	quadric = gluNewQuadric();
 	gluQuadricTexture(quadric, GL_TRUE);
 
-	/*----Load Texture images-------------------------------------------------------*/
+	//Load Texture images
 	texture = SOIL_load_OGL_texture("./textures/showMeWhatYouGot.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 	Portals = SOIL_load_OGL_texture("./textures/portal.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 	PortalsCenter = SOIL_load_OGL_texture("./textures/portalcenter.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 	PortalsOuter = SOIL_load_OGL_texture("./textures/spiral2.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 	sun = SOIL_load_OGL_texture("./textures/Sun1.png", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-	/*----End of Load Texture images------------------------------------------------*/
 
-	/*----Load Terrains-------------------------------------------------------------*/
+	//Load Terrains
 	cout << ">Loading .raw terrains ... " << endl;
 	terrain.loadFile("./heightMaps/wallTest.raw", imageSize);
 	terrain1.loadFile("./heightMaps/gta.raw", imageSize);
 	cout << ">Terrains loaded." << endl << endl;
-	/*----End of Load Terrains------------------------------------------------------*/
 
-	/*----Map array of indxed heights-----------------------------------------------*/
+	//assign heights using map heights indxed.
 	currentTerrain = &terrain;
 	portalGunPos.y = currentTerrain->getSample(camPos.x+200, camPos.z+200);
 	pistolPos.y = portalGunPos.y;
 	assaultPos.y = portalGunPos.y;
-	/*----End of Map array of indxed heights----------------------------------------*/
+	rocketPos.y = portalGunPos.y;
 
-	/*---set initial camheight y----------------------------------------------------*/
+	//set initial camheight y
 	camPos.y = currentTerrain->getSample(camPos.x, camPos.z) + 10.0f;
-	/*---End of set initial camheight y---------------------------------------------*/
 
-	Vec3 tmpPos(1.25f, -0.25f, -4.0f);
-	Vec3 tmpPos2(0.35f, -0.27f, -2.0f);
+	Vec3 tmpPos (1.0f, -0.27f, -2.9f);
+	Vec3 tmpPos2(0.7f, -0.50f, -2.9f);
+	Vec3 tmpPos3(1.0f, -0.50f,  0.0f);
+	Vec3 tmpPos4(0.0f, -0.35f,  0.0f);
 	stormPos.y = currentTerrain->getSample(stormPos.x, stormPos.z);
 	playerPos.x = camPos.x; playerPos.z = camPos.z;
-	/*----Load Object files---------------------------------------------------------*/
+	
+	//Load Object files
 	cout << ">Loading Objects ..." << endl;
-	meshTree = new Obj("./data/Tree/Tree.obj", "tree");
 	building = new Obj("./data/City/newCity.obj", "city #1");
 	//nimbus = new Obj("./data/Sirus-City/sirus.obj", "city #2");
 	wPortal = new Weapon("./data/Portal-Gun/portalgun_v3.obj", "portalGun", portalGunPos, tmpPos2, 6, 1, 180, 0, 1, 0, NULL);
 	wPistol = new Weapon("./data/newGun/newgun.obj", "pistol", pistolPos, tmpPos, 8, 1, 90, 0, 1, 0, "./data/newGun/handgun_Fire.png");
-	assault = new Weapon("./data/AK47/AK47.obj", "auto", assaultPos, tmpPos, 8, 1, 180, 0, 1, 0, "./data/newGun/handgun_Fire.png");
+	assault = new Weapon("./data/AK47/AK47.obj", "auto", assaultPos, tmpPos4, 8, 1, 180, 0, 1, 0, NULL);
+	rocket = new Weapon("./data/rpg/rpg.obj", "rocket", rocketPos, tmpPos3, 20, 10, 180, 0, 1, 0, "");
+	rock = new Item("./data/rpg/rocket.obj", "rock", rocketPos);
 	stormtrooper = new Item("./data/stormtrooper/Stormtrooper.obj", "person", stormPos);
 	myPlayer = new Player("./data/James_Bond/james_bond.obj", "player", playerPos, 13.4f, camLook);//26.5f);
 	cout << ">All objects constructed." << endl;
@@ -815,7 +792,7 @@ void load()
 	string name;
 	//randomize x and z position, and sample y height of map based on random (x,0,z);
 	//construct 25 zombie players, set target for zombies as myPlayer, add to enemyList
-	for(int i= 0; i<25; ++i)
+	for(int i= 0; i<52; ++i)
 	{
 		name = "zombie" + string(1, '0' + i);
 		Vec3 tmp;
@@ -827,6 +804,7 @@ void load()
 		p->setGrunt("./SFX/zombieGrunt.wav");
 		p->setTarget(myPlayer);
 		p->setBodyCenter(13.4f);
+		p->setTerrain(currentTerrain);
 		enemyList.push_back(p);
 	}
 	cout << ">All enemies constructed." << endl;
@@ -837,6 +815,7 @@ void load()
 	weaponList.push_back(wPistol);
 	weaponList.push_back(wPortal);
 	weaponList.push_back(assault);
+	weaponList.push_back(rocket);
 	cout << ">weaponList constructed." << endl;
 	objList.push_back(stormtrooper);
 	cout << ">objectList constructed." << endl;
@@ -851,14 +830,13 @@ void load()
 
 	/*nimbus->setPos(10244,288,8020);//nimbus->setPos(4000.0f, terrain1.getSample(4000,portalGunPos.z+5000), portalGunPos.z+5000);
 	nimbus->setScale(4);*/
-
-	meshTree->setPos(3700, currentTerrain->getSample(3700, 500), 500);
-	meshTree->setScale(20);
 	/*------------------------------------------------------------------------------*/
 
     //cout << ">Setting weapon audio ..."<< endl;
     wPistol->pickupSFX = gBlap;
     wPortal->pickupSFX = gWrecked;
+    rocket->pickupSFX = gRocket;
+
     //cout << ">Weapon audio enabled." <<endl;
 
 

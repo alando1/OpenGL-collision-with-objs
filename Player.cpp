@@ -30,7 +30,11 @@ void Player::persue(float dt)
 	/*----Persue if distance > 20
 		  if less than 20, attack-------*/
 	if(dist > 20.0f)
+	{
 		pos += (look*dt*0.1f*speed);
+		//reheight
+		pos.y = terrain->getSample(pos.x,pos.y);
+	}
 	else
 	{
 		if(dist <= 20.0f)

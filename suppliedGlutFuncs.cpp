@@ -3,7 +3,7 @@
 extern list<Portal*> portalList;
 extern list<Bullet*> bulletList;
 extern vector<Weapon*> myWeapons;
-extern Mix_Chunk *shootSFX, *gPistol;
+extern Mix_Chunk *shootSFX, *gPistol, *gAssualt, *gRocket;
 extern float pitch, heading, boost, aspectRatio, perspective;
 extern int centerX, centerY, fire;
 extern bool keyStates[256], keyTaps[256], inJump;
@@ -182,9 +182,17 @@ void mouseButton(int button, int state, int x, int y)
 			}
 			if(myWeapons[myWeapon]->getName() == "auto")
 			{
-				myWeapons[myWeapon]->setShootTrue();
-				Mix_PlayChannel(-1, gPistol, 0);
+				//myWeapons[myWeapon]->setShootTrue();
+				Mix_PlayChannel(-1, gAssualt, 0);
 				Bullet* ball = new Bullet(1.0f, 50.0f, camLook, camPos, chrono::steady_clock::now());
+				bulletList.push_back(ball);
+			}
+			if(myWeapons[myWeapon]->getName() == "rocket")
+			{
+				//myWeapons[myWeapon]->setShootTrue();
+				Mix_PlayChannel(-1, gPistol, 0);
+				Bullet* ball = new Bullet(30.0f, 10.0f, camLook, camPos, chrono::steady_clock::now());
+				ball->setDamageRadius(30.0f);
 				bulletList.push_back(ball);
 			}
 		}
@@ -208,6 +216,7 @@ void mouseButton(int button, int state, int x, int y)
 			zoom = false;
 	}
 
+	//scrolling controls, up is 3, down is 4
 	if(button == 3 || button == 4)
 	{
 		if(state == GLUT_UP)

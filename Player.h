@@ -8,6 +8,7 @@
 #include <vector>
 #include "Vec3.h"
 #include "Obj.h"
+#include "Terrain.h"
 #include <SDL.h>
 //#undef main 	//required by SDL
 #include <SDL_mixer.h>
@@ -21,12 +22,17 @@ public:
 	
 	int deaths;
 	Player* target;
+	Terrain* terrain;
 
 	float eye();
 	void updateCamera();
 	void persue(float dt);
 	void attack(Player* _target);
 	void setTarget(Player* _target);
+	void setTerrain(Terrain* t)
+	{
+		terrain = t;
+	};
 	void setGrunt(const char* fileLoc);
 	void setBodyCenter(float bodyCenter);
 	float getHealth()		{		return health;	};

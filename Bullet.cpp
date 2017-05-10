@@ -3,10 +3,10 @@
 	Bullet::Bullet(float Size, float Velocity, Vec3 Look, Vec3 Pos, chrono::steady_clock::time_point Start) :
 	size(Size), velocity(Velocity), look(Look), pos(Pos), start(Start)
 	{
-
-		color.r=0.1f;
-		color.g=0.1f;
-		color.b=0.1f;
+		damageRadius=5.0f;
+		color.r=0.0f;
+		color.g=0.0f;
+		color.b=0.0f;
 		pos.x+=look.x*5;
 		pos.y+=look.y*5;
 		pos.z+=look.z*5;

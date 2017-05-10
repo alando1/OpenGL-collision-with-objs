@@ -10,7 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Kd /Maps/cty1.jpg
+map_Kd Maps/cty1.jpg
 
 newmtl default_bldgs2
 Ns 0.000000
