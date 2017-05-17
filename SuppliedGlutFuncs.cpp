@@ -1,4 +1,4 @@
-#include "suppliedGlutFuncs.h"
+#include "SuppliedGlutFuncs.h"
 
 extern list<Portal*> portalList;
 extern list<Bullet*> bulletList;
@@ -63,7 +63,7 @@ void initGL(int argc, char** argv)
 	glFrontFace(GL_CCW);
 	glDepthFunc(GL_LEQUAL);
 
-	initFog();
+	//initFog();
 	initLight();
 
 	//initialize bool arrays

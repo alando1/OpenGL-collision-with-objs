@@ -4,7 +4,7 @@ LINKFLAGS =
 LINKCMD = g++ $(LINKFLAGS) $(OBJS)  $(LIBRARIES) -o $(TARGET)
 LIBRARIES = -lSDL2main -lSDL2 -lGLU -lGL -lSOIL -lglut -lSDL2_mixer
 #LIBRARIES = -lSDL2 -lSDL2main -lSDL2_mixer -lfreeglut -lSOIL -lopengl32 -lglu32 
-OBJS = Camera.o Player.o Mesh.o Item.o Weapon.o Bullet.o Portal.o Terrain.o suppliedGlutFuncs.o DrawFunc.o 256main.o
+OBJS = Camera.o Player.o Mesh.o Item.o Weapon.o Bullet.o Portal.o Terrain.o SuppliedGlutFuncs.o DrawFunc.o 256main.o
 TARGET = run
 
 main:   $(OBJS)
@@ -37,8 +37,8 @@ Portal.o: Portal.h Portal.cpp
 Terrain.o:  Terrain.h Terrain.cpp
 	$(COMPILECMD) Terrain.cpp 
 
-suppliedGlutFuncs.o: suppliedGlutFuncs.cpp suppliedGlutFuncs.h
-	$(COMPILECMD) suppliedGlutFuncs.cpp
+SuppliedGlutFuncs.o: SuppliedGlutFuncs.cpp SuppliedGlutFuncs.h
+	$(COMPILECMD) SuppliedGlutFuncs.cpp
 
 DrawFunc.o: DrawFunc.cpp
 	$(COMPILECMD) DrawFunc.cpp

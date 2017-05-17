@@ -8,7 +8,7 @@
 #include <chrono>
 /*---------------*/
 #include "DrawFunc.h"
-#include "suppliedGlutFuncs.h"
+#include "SuppliedGlutFuncs.h"
 #include "Terrain.h"
 #include "Vec3.h"
 #include "Portal.h"
