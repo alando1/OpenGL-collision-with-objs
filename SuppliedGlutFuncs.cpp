@@ -10,7 +10,7 @@ extern bool keyStates[256], keyTaps[256], inJump;
 extern void* font;
 extern float FPS, speed;
 extern Vec3 camPos, camLook;
-extern bool hasPortalGun, zoom, holdingPortalGun, hasPistol, holdingPistol, shoot;
+extern bool hasPortalGun, zoom, holdingPortalGun, hasPistol, holdingPistol, shoot, hud;
 extern void drawFire();
 extern Weapon* nextWeapon, prevWeapon;
 vector<Weapon*>::iterator it;
@@ -83,13 +83,13 @@ void initFog()
 	glEnable(GL_FOG);
 	glFogi(GL_FOG_MODE, GL_LINEAR);
 	float fogColor[] = {0.5, 0.5, 0.5, 1.0};
-	float fogDensity= 0.01f;
+	float fogDensity= 1.0f;
 	glFogfv(GL_FOG_COLOR, fogColor);
 	glFogf(GL_FOG_DENSITY, fogDensity);
 	glHint(GL_FOG_HINT, GL_NICEST);
 
-	glFogf(GL_FOG_START, 2000.0f);
-	glFogf(GL_FOG_END, 40000.0f);
+	glFogf(GL_FOG_START, 100.0f);
+	glFogf(GL_FOG_END, 10000.0f);
 }
 
 void initLight()
@@ -320,79 +320,81 @@ void printScreenText()
 {
 	char msg[80];
 
-    glColor3f(0.43f, 0, 0.03f);
- 	glDisable(GL_LIGHTING);
-    sprintf(msg, "cam pos: %.3f, %.3f, %.3f", camPos.x, camPos.y, camPos.z);
-    renderText2D(5.0f, 20.0f, font, msg);
-
-    sprintf(msg, "FOV: %.1f", perspective);
-    renderText2D(5.0f, 40.0f, font, msg);
-
-    sprintf(msg, "look vector: %.3f, %.3f, %.3f", camLook.x, camLook.y, camLook.z);
-    renderText2D(5.0f, 60.0f, font, msg);
-
-    sprintf(msg, "Speed: %.3f", speed);
-    renderText2D(5.0f, 80.0f, font, msg);
-
-    sprintf(msg, "FPS: %.3f", FPS);
-    renderText2D(5.0f, 100.0f, font, msg);  
-
-    sprintf(msg, "Movement:");
-    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 100.0f, font, msg);
-
-    sprintf(msg, "SPACE - JUMP");
-    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 80.0f, font, msg);  
-
-    sprintf(msg, "W - FORWARD");
-    renderText2D(145.0f, glutGet(GLUT_WINDOW_HEIGHT) - 80.0f, font, msg);      
-
-    sprintf(msg, "S - BACKWARD");
-    renderText2D(145.0f, glutGet(GLUT_WINDOW_HEIGHT) - 60.0f, font, msg);  
-
-    sprintf(msg, "A - LEFT");
-    renderText2D(145.0f, glutGet(GLUT_WINDOW_HEIGHT) - 40.0f, font, msg);  
-
-    sprintf(msg, "D - RIGHT");
-    renderText2D(145.0f, glutGet(GLUT_WINDOW_HEIGHT) - 20.0f, font, msg);  
-
-    sprintf(msg, "Q - FLY");
-    renderText2D(145.0f, glutGet(GLUT_WINDOW_HEIGHT) - 100.0f, font, msg);  
-
-    sprintf(msg, "LEFT CLICK - SHOOT");
-    renderText2D( glutGet(GLUT_WINDOW_WIDTH) - 240.0f,glutGet(GLUT_WINDOW_HEIGHT) - 100.0f,font, msg); 
-
-    sprintf(msg, "RIGHT CLICK - ZOOM");
-    renderText2D( glutGet(GLUT_WINDOW_WIDTH) - 240.0f, glutGet(GLUT_WINDOW_HEIGHT) - 80.0f,font, msg); 
-
-    sprintf(msg, "In Bounds: %d", currentTerrain->isInBounds(camPos));
-    renderText2D(700.0f, 20.0f, font, msg);
-
-    sprintf(msg, "current height:\t%.3f", currentTerrain->getSample(camPos));
-    renderText2D(700.0f, 40.0f, font, msg);
-
-    sprintf(msg, "myPlayer position:\t%.3f, %.3f, %.3f", myPlayer->pos.x, myPlayer->pos.y, myPlayer->pos.z);
-    renderText2D(700.0f, 60.0f, font, msg);
-
-	sprintf(msg, "myPlayer deaths:\t%d", myPlayer->deaths);
-	renderText2D(700.0f, 80.0f, font, msg);
-
-	if(!myPlayer->isAlive())
+	if(hud == true)
 	{
-		sprintf(msg, "\tYou DIED. Press TAB to respawn.");
-		renderText2D(400.0f, 600.0f, font, msg);
+	    glColor3f(0.43f, 0, 0.03f);
+	 	glDisable(GL_LIGHTING);
+	    sprintf(msg, " Camera Pos: %.03f, %.03f, %.03f", camPos.x, camPos.y, camPos.z);
+	    renderText2D(5.0f, 20.0f, font, msg);
+
+	    sprintf(msg, "look Vector: %.03f, %.03f, %.03f", camLook.x, camLook.y, camLook.z);
+	    renderText2D(5.0f, 40.0f, font, msg);
+
+	    sprintf(msg, "FOV: %.1f", perspective);
+	    renderText2D(5.0f, 60.0f, font, msg);
+
+	    sprintf(msg, "FPS: %.3f", FPS);
+	    renderText2D(5.0f, 80.0f, font, msg);  
+
+	    sprintf(msg, "Left Click - SHOOT");
+	    renderText2D(5.0f ,glutGet(GLUT_WINDOW_HEIGHT) - 165.0f,font, msg); 
+
+	    sprintf(msg, "Right Click - ZOOM");
+	    renderText2D(5.0f , glutGet(GLUT_WINDOW_HEIGHT) - 145.0f ,font, msg); 
+
+	    sprintf(msg, "Movement:");
+	    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 125.0f, font, msg);
+
+	    sprintf(msg, "Q - FLY");
+	    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 105.0f, font, msg);
+
+	    sprintf(msg, "W - FORWARD");
+	    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 85.0f, font, msg);      
+
+	    sprintf(msg, "S - BACKWARD");
+	    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 65.0f, font, msg);  
+
+	    sprintf(msg, "A - LEFT");
+	    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 45.0f, font, msg);  
+
+	    sprintf(msg, "D - RIGHT");
+	    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 25.0f, font, msg);  
+
+	    sprintf(msg, "SPACE - JUMP");
+	    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 5.0f, font, msg);  
+
+
+	    sprintf(msg, "In Bounds: %d", currentTerrain->isInBounds(camPos));
+	    renderText2D(700.0f, 20.0f, font, msg);
+
+	    sprintf(msg, "current height:\t%.3f", currentTerrain->getSample(camPos));
+	    renderText2D(700.0f, 40.0f, font, msg);
+
+	    sprintf(msg, "myPlayer position:\t%.3f, %.3f, %.3f", myPlayer->pos.x, myPlayer->pos.y, myPlayer->pos.z);
+	    renderText2D(700.0f, 60.0f, font, msg);
+
+		sprintf(msg, "myPlayer deaths:\t%d", myPlayer->deaths);
+		renderText2D(700.0f, 80.0f, font, msg);
+
+		if(!myPlayer->isAlive())
+		{
+			sprintf(msg, "\tYou DIED. Press TAB to respawn.");
+			renderText2D(400.0f, 600.0f, font, msg);
+		}
+
+	    if(nimbus != NULL)
+		{
+			sprintf(msg, "nimbasa pos:  %.3f, %.3f, %.3f", nimbus->pos.x, nimbus->pos.y, nimbus->pos.z);
+		    renderText2D(700.0f, 80.0f, font, msg);
+		} 
+
+	    sprintf(msg, "Zombies:\t%d", numOfZombies);
+	    renderText2D(450, 20.0f, font, msg);
+
+	    sprintf(msg, "myPlayer health:\t%.3f,", myPlayer->getHealth());
+	    renderText2D(450, 40.0f, font, msg);
+		
 	}
-
-    if(nimbus != NULL)
-	{
-		sprintf(msg, "nimbasa pos:  %.3f, %.3f, %.3f", nimbus->pos.x, nimbus->pos.y, nimbus->pos.z);
-	    renderText2D(700.0f, 80.0f, font, msg);
-	} 
-
-    sprintf(msg, "Zombies:\t%d", numOfZombies);
-    renderText2D(450, 20.0f, font, msg);
-
-    sprintf(msg, "myPlayer health:\t%.3f,", myPlayer->getHealth());
-    renderText2D(450, 40.0f, font, msg);
 
     glEnable(GL_LIGHTING);
 }

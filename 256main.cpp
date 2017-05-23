@@ -76,6 +76,7 @@ float aspectRatio = 1024.0f/768.0f;
 float FPS = 0.0f;
 float fpsUpdateTime = 0.0f;
 int frameCount = 0;
+bool hud = true;
 
 /*--Camera Positions and Look Vectors--------------------------------------------*/
 Vec3 camLook(0.0f, 0.0f, 1.0f);
@@ -140,7 +141,7 @@ vector<Weapon*> weaponList;
 
 Player* enemy = NULL;
 Player* myPlayer = NULL;
-int numOfZombies = 25;
+int numOfZombies= 0;
 void drawBackground()
 {
 	/*---Clear color and Depth Buffers----------------------------------------------*/
@@ -211,16 +212,18 @@ void handleFunc(float dt)
 	if(keyTaps['1'])
 		inFirstWorld = !inFirstWorld;
 
-	if(keyTaps['f'] || keyTaps['F'])
+	/*	if(keyTaps['f'] || keyTaps['F'])
 	{
 		fog = !fog;
 		if(fog)
 			glEnable(GL_FOG);
 		else
 			glDisable(GL_FOG);
-
+	}*/
+	if(keyTaps['H'] || keyTaps['h'])
+	{
+		hud = !hud;
 	}
-
 	/*-----Zoom---------------------------------------------------------------------*/
 	if(zoom)
 	{
@@ -236,7 +239,7 @@ void handleFunc(float dt)
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(perspective, aspectRatio, 0.1f, 400000.0f);
+		gluPerspective(perspective, aspectRatio, 0.1f, 40000.0f);
 		glMatrixMode(GL_MODELVIEW);
 	}
 
@@ -248,7 +251,7 @@ void handleFunc(float dt)
 			perspective = 180.0f;
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(perspective, aspectRatio, 0.1f, 400000.0f);
+		gluPerspective(perspective, aspectRatio, 0.1f, 40000.0f);
 		glMatrixMode(GL_MODELVIEW);
 	}
 	if(keyStates['\\'])
@@ -256,7 +259,7 @@ void handleFunc(float dt)
 		perspective= 45.0f;
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(perspective, aspectRatio, 0.1f, 400000.0f);
+		gluPerspective(perspective, aspectRatio, 0.1f, 40000.0f);
 		glMatrixMode(GL_MODELVIEW);
 	}
 	if(keyStates['='])
@@ -266,7 +269,7 @@ void handleFunc(float dt)
 			perspective = 0.0f;
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		gluPerspective(perspective, aspectRatio, 0.1f, 400000.0f);
+		gluPerspective(perspective, aspectRatio, 0.1f, 40000.0f);
 		glMatrixMode(GL_MODELVIEW);
 	}
 
@@ -399,6 +402,7 @@ void handleFunc(float dt)
 		{
 			camPos= respawnPos;
 			myPlayer->setAlive();
+			myPlayer->setRot(0.0f,1.0f,0,0);
 		}
 	}
 }
@@ -477,7 +481,7 @@ void updatePortals()
 
 			//check if near portal and portal is open
 			auto nowish = chrono::steady_clock::now();
-			if((r.length()<100.0f) && readyToWarp == true && (*it)->Open() < nowish)
+			if((r.length()<60.0f) && readyToWarp == true && (*it)->Open() < nowish)
 			{
 					//update map
 					inFirstWorld = !inFirstWorld;
@@ -494,14 +498,28 @@ void updatePortals()
 		}
 	}	
 }
+
+void updateZombies()
+{
+	list<Player*>::iterator it;
+	for(auto it = enemyList.begin(); it!=enemyList.end(); ++it)
+		(*it)->setAlive();
+
+	numOfZombies = enemyList.size();
+}
+
 void updateEnemies()
 {
+	if(numOfZombies == 0)
+		updateZombies();
+
 	for(auto it = enemyList.begin(); it!=enemyList.end(); ++it)
 	{
 		if((*it)->target->isAlive() && (*it)->isAlive())
 			(*it)->persue(dt);
 	}
 }
+
 void updateBullets()
 {
 	/*first while checks if bullet is still live(before its end time), if not, remove from list*/
@@ -538,14 +556,11 @@ void updateBullets()
 			{
 				//check for collision between bullet and enemy position.
 				r = (*it2)->returnCollisionVec()-tmp;
-				if(r.length() < (*it)->getDamageRadius())
+				if(r.length() < (*it)->getDamageRadius() && ((*it2)->isAlive()))
 				{
-					//(*it2)->setDead();
-					enemyList.erase(it2);
+					(*it2)->setDead();
 					numOfZombies--;
 					fresh = true;
-					/*bulletList.erase(it);
-					delete *it;*/
 				}
 			}
 		}
@@ -792,7 +807,8 @@ void load()
 	string name;
 	//randomize x and z position, and sample y height of map based on random (x,0,z);
 	//construct 25 zombie players, set target for zombies as myPlayer, add to enemyList
-	for(int i= 0; i<52; ++i)
+	int numOfZombies = 52;
+	for(int i= 0; i<numOfZombies; ++i)
 	{
 		name = "zombie" + string(1, '0' + i);
 		Vec3 tmp;
