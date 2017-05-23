@@ -382,18 +382,20 @@ void printScreenText()
 			renderText2D(400.0f, 600.0f, font, msg);
 		}
 
-	    if(nimbus != NULL)
-		{
-			sprintf(msg, "nimbasa pos:  %.3f, %.3f, %.3f", nimbus->pos.x, nimbus->pos.y, nimbus->pos.z);
-		    renderText2D(700.0f, 80.0f, font, msg);
-		} 
-
 	    sprintf(msg, "Zombies:\t%d", numOfZombies);
 	    renderText2D(450, 20.0f, font, msg);
 
 	    sprintf(msg, "myPlayer health:\t%.3f,", myPlayer->getHealth());
 	    renderText2D(450, 40.0f, font, msg);
 		
+	}
+	else 
+	{
+	    sprintf(msg, "press H for display");
+	    renderText2D(5.0f, glutGet(GLUT_WINDOW_HEIGHT) - 5.0f, font, msg);
+
+	    sprintf(msg, "FPS: %.3f", FPS);
+	    renderText2D(5.0f, 80.0f, font, msg);   
 	}
 
     glEnable(GL_LIGHTING);

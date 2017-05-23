@@ -76,7 +76,7 @@ float aspectRatio = 1024.0f/768.0f;
 float FPS = 0.0f;
 float fpsUpdateTime = 0.0f;
 int frameCount = 0;
-bool hud = true;
+bool hud = false;
 
 /*--Camera Positions and Look Vectors--------------------------------------------*/
 Vec3 camLook(0.0f, 0.0f, 1.0f);
