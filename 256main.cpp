@@ -683,14 +683,14 @@ void firstWorldDraw()
 void secondWorldDraw()
 {
 	terrain1.drawElements();
-	/*glDisable(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE);
 
 		glPushMatrix();
 			nimbus->draw();
 		glPopMatrix();
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	glFrontFace(GL_CCW);*/
+	glFrontFace(GL_CCW);
 }
 void renderScene(void)
 {
@@ -790,8 +790,8 @@ void load()
 	
 	//Load Object files
 	cout << ">Loading Objects ..." << endl;
-	building = new Obj("./data/City/newCity.obj", "city #1");
-	//nimbus = new Obj("./data/Sirus-City/sirus.obj", "city #2");
+	building = new Obj("./data/City/town.obj", "city #1");
+	nimbus = new Obj("./data/Sirus-City/sirus.obj", "city #2");
 	wPortal = new Weapon("./data/Portal-Gun/portalgun_v3.obj", "portalGun", portalGunPos, tmpPos2, 6, 1, 180, 0, 1, 0, NULL);
 	wPistol = new Weapon("./data/newGun/newgun.obj", "pistol", pistolPos, tmpPos, 8, 1, 90, 0, 1, 0, "./data/newGun/handgun_Fire.png");
 	assault = new Weapon("./data/AK47/AK47.obj", "auto", assaultPos, tmpPos4, 8, 1, 180, 0, 1, 0, NULL);
@@ -844,8 +844,8 @@ void load()
 	building->setPos(7000.0f, currentTerrain->getSample(7000,portalGunPos.z+10000), portalGunPos.z+10000);
 	building->setScale(4);
 
-	/*nimbus->setPos(10244,288,8020);//nimbus->setPos(4000.0f, terrain1.getSample(4000,portalGunPos.z+5000), portalGunPos.z+5000);
-	nimbus->setScale(4);*/
+	nimbus->setPos(10244,288,8020);//nimbus->setPos(4000.0f, terrain1.getSample(4000,portalGunPos.z+5000), portalGunPos.z+5000);
+	nimbus->setScale(4);
 	/*------------------------------------------------------------------------------*/
 
     //cout << ">Setting weapon audio ..."<< endl;
