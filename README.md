@@ -9,9 +9,9 @@ to run on Windows
 -type run or run.exe to run compiled program.
 
 to run on Linux
--unix libraries are listed in install.sh
--they can be installed with sudo apt-get install or running the shell script.
--type in chmod 755 install.sh to create executable to install libraries.
--type make in terminal to run makefile.
--make writes compiled binaries to run.out
--type ./run or ./run.out to run compiled program.
+-Enter make get-libraries in terminal to install depencency libraries.
+-Enter make in terminal to compile files.
+-make writes compiled binaries to run
+-Enter ./run to run compiled program.
+-Enter make clean to remove .o files.
+-Enter make clean-remove to remove installed libraries.

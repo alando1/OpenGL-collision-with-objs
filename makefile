@@ -13,6 +13,12 @@ main:   $(OBJS)
 clean:
 	rm *.o
 
+clean-remove:
+	sudo apt autoremove freeglut3-dev libsdl2-dev libsdl2-mixer-dev libsoil-dev libglm-dev -y
+
+get-libraries:
+	sudo apt-get install freeglut3-dev libsdl2-dev libsdl2-mixer-dev libsoil-dev libglm-dev -y
+
 Camera.o: Camera.h Camera.cpp
 	$(COMPILECMD) Camera.cpp
 
