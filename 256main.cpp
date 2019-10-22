@@ -212,14 +212,14 @@ void handleFunc(float dt)
 	if(keyTaps['1'])
 		inFirstWorld = !inFirstWorld;
 
-	/*	if(keyTaps['f'] || keyTaps['F'])
+	if(keyTaps['f'] || keyTaps['F'])
 	{
 		fog = !fog;
 		if(fog)
 			glEnable(GL_FOG);
 		else
 			glDisable(GL_FOG);
-	}*/
+	}
 	if(keyTaps['H'] || keyTaps['h'])
 	{
 		hud = !hud;
@@ -807,7 +807,7 @@ void load()
 	string name;
 	//randomize x and z position, and sample y height of map based on random (x,0,z);
 	//construct 25 zombie players, set target for zombies as myPlayer, add to enemyList
-	int numOfZombies = 52;
+	int numOfZombies = 7;
 	for(int i= 0; i<numOfZombies; ++i)
 	{
 		name = "zombie" + string(1, '0' + i);
